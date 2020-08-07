@@ -1,10 +1,14 @@
-import { useReducer } from 'react';
+import { useReducer, useEffect } from 'react';
+import axios from 'axios';
 
 const ACTIONS = {
   MAKE_REQUEST: 'make-request',
   GET_DATA: 'get-data',
   ERROR: 'error',
 };
+
+const PROXY_URL = 'https://boiling-journey-68368.herokuapp.com/';
+const BASE_URL = 'https://jobs.github.com/positions.json';
 
 function reducer(state, action) {
   switch (action.type) {
@@ -27,9 +31,19 @@ function reducer(state, action) {
 export default function useFetchJobs(params, page) {
   const [state, dispatch] = useReducer(reducer, { jobs: [], loading: true });
 
-  return {
-    jobs: [],
-    loading: false,
-    error: true,
-  };
+  useEffect(() => {
+    dispatch({ type: ACTIONS.MAKE_REQUEST });
+    axios
+      .get(PROXY_URL + BASE_URL, {
+        params: { markdown: true, page: page, ...params },
+      })
+      .then((res) => {
+        dispatch({ type: ACTIONS.GET_DATA, payload: { jobs: res.data } });
+      })
+      .catch((e) => {
+        dispatch({ type: ACTIONS.ERROR, payload: { error: e } });
+      });
+  }, [params, page]);
+
+  return state;
 }
